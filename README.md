@@ -1,6 +1,12 @@
 # XSS and MySQLi vulnerability website
 > Made for school project
 
+## Table of Contents
+1. [Installation](#installation)
+2. [Attacks](#attacks)
+3. [About](#about)
+4. [How does it work?](#how-does-it-work)
+
 ## Installation
 
 ### Requirements
