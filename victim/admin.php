@@ -9,7 +9,13 @@
     </style>
 </head>
 <body>
+<?php
 
+if(!isset($_COOKIE["jwt"])) {
+    header("Location: /XSS_example/victim/login.php");
+}
+
+?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" href="/XSS_example/victim">Z-KOM</a>
@@ -24,6 +30,20 @@
         <li class="nav-item">
           <a class="nav-link" href="/XSS_example/victim/cart.php">Koszyk</a>
         </li>
+        <?php
+        include "./helpers/jwt.php";
+        $jwtHelper = new JWTHelper();
+        $payload = $jwtHelper->GetPayload($_COOKIE["jwt"]);
+
+        $user = $payload["data"];
+
+        if ($user["role"] == "admin") {
+            echo "
+            <li class='nav-item'>
+            <a class='nav-link' href='/XSS_example/victim/admin.php'>Admin Panel</a>
+          </li>";
+        }
+        ?>
       </ul>
     </div>
     <?php
@@ -49,10 +69,21 @@
 </nav>
 
 <div class="container mt-4">
-    <h1>Witaj w sklepie internetowym Z-KOM!</h1>
-    <p>Tutaj znajdziesz szeroki wybór produktów.</p>
-</div>
 
+    <?php
+        $payload = $jwtHelper->GetPayload($_COOKIE["jwt"]);
+
+        $user = $payload["data"];
+
+        if ($user["role"] != "admin") {
+            echo "<div class='text-danger'>Tylko administrator ma dostęp do tej strony.</div>";
+        }
+        else {
+            echo "<div class='text-danger'>Jesteś administratorem: CTF-{we-love-kornik}</div>";
+        }
+    ?>
+
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

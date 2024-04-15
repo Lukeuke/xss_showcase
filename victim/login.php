@@ -22,9 +22,12 @@
           <a class="nav-link" href="/XSS_example/victim/products.php">Produkty</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="basket.php">Koszyk</a>
+          <a class="nav-link" href="/XSS_example/victim/cart.php">Koszyk</a>
         </li>
       </ul>
+    </div>
+    <div class="ml-auto">
+        <a class="btn btn-outline-light" href="/XSS_example/victim/login.php">Zaloguj</a>
     </div>
   </div>
 </nav>
@@ -52,24 +55,6 @@
 
                             <?php
 
-                                function base64url_encode($data) {
-                                    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-                                }
-
-                                function base64url_decode($data) {
-                                    return base64_decode(strtr($data, '-_', '+/') . str_repeat('=', 3 - (3 + strlen($data)) % 4));
-                                }
-
-                                function generate_jwt($header, $payload, $secret_key) {
-                                    $header_encoded = base64url_encode(json_encode($header));
-                                    $payload_encoded = base64url_encode(json_encode($payload));
-
-                                    $signature = hash_hmac('sha256', $header_encoded . '.' . $payload_encoded, $secret_key, true);
-                                    $signature_encoded = base64url_encode($signature);
-
-                                    return $header_encoded . '.' . $payload_encoded . '.' . $signature_encoded;
-                                }
-
                                 function is_valid_user($username, $password) {
                                     $conn = mysqli_connect("localhost", "root", "", "xss_attack_db");
                                     $q = "SELECT username, password FROM users WHERE username = '$username'";
@@ -84,32 +69,53 @@
                                     return false;
                                 }
 
+                                function get_user_data($username) {
+                                    $conn = mysqli_connect("localhost", "root", "", "xss_attack_db");
+                                    $q = "SELECT username, role, id FROM users WHERE username = '$username'";
+
+                                    $result = mysqli_query($conn, $q);
+
+                                    while ($row = mysqli_fetch_row($result)) {
+                                        if ($row[0] == $username) {
+                                            return $row;
+                                        }
+                                    }
+                                    
+                                    $conn->close();
+                                }
+
                                 if ($_POST) {
 
                                     $username = $_POST['username'];
                                     $password = $_POST['password'];
                                     
                                     if (is_valid_user($username, $password)) {
-                                        $secret_key = 'welovekornik';
                                         $issued_at = time();
-                                        $expiration_time = $issued_at + (60 * 60); // token valid for 1 hour
+                                        $expiration_time = $issued_at + 3600 * 10;
                                     
                                         $header = [
                                             'alg' => 'HS256',
                                             'typ' => 'JWT'
                                         ];
                                     
+                                        $user = get_user_data($username);
+
                                         $payload = [
                                             'iat' => $issued_at,
                                             'exp' => $expiration_time,
                                             'data' => [
-                                                'username' => $username
+                                                'id' => $user[2],
+                                                'username' => $username,
+                                                'role' => $user[1],
                                             ]
                                         ];
                                     
-                                        $jwt = generate_jwt($header, $payload, $secret_key);
+                                        include("./helpers/jwt.php");
+                                        $jwtHelper = new JWTHelper($secret_key);
+
+                                        $jwt = $jwtHelper->generate($payload);
                                     
-                                        setcookie("jwt", $jwt, time() + 3600);
+                                        setcookie("jwt", $jwt, time() + 3600 * 10);
                                     
                                         header("Location: /XSS_example/victim");
                                     } else {

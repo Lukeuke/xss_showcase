@@ -25,7 +25,6 @@
         }
 
         .product-image {
-            width: 100%;
             height: auto;
             border-radius: 8px;
             margin-bottom: 10px;
@@ -61,7 +60,7 @@ if(!$_COOKIE["jwt"]) {
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" href="">Produkty</a>
+          <a class="nav-link" href="/XSS_example/victim/products.php">Produkty</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/XSS_example/victim/cart.php">Koszyk</a>
@@ -92,84 +91,58 @@ if(!$_COOKIE["jwt"]) {
 </nav>
 
 <div class="container mt-4">
-    <h1>Wpisz aby wyszukać produkty!</h1>
-
-    <form class="d-flex ms-auto" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="GET">
-        <input class="form-control me-2" type="text" name="search" 
-        value="<?php 
-        if (isset($_GET['search']))  {
-          echo $_GET['search'];
-        }
-        ?>" 
-        placeholder="Wyszukaj" aria-label="Search" />
-
-        <input type="submit" value="Szukaj" />
-      </form>
-
     <?php
-      echo "<div class='row'>";
-      if (isset($_GET['search'])) {
-        echo "<p>Wyniki dla: " . "<span class='fw-bold'>" . $_GET['search'] . "</span>" . "</p>";
-
-        $s = $_GET['search'];
-
         $conn = mysqli_connect("localhost", "root", "", "xss_attack_db");
-        $q = "SELECT title, description, price, image, id FROM products WHERE title LIKE '%$s%' OR description LIKE '%$s%'";
+
+        $id = $_GET["id"] ?? -1;
+
+        $added_to_basket_message = '';
+        if ($_POST) {
+            include "./helpers/jwt.php";
+            $jwtHelper = new JWTHelper();
+        
+            $payload = $jwtHelper->GetPayload($_COOKIE["jwt"]);
+        
+            $user = $payload["data"];
+            $userId = $user["id"];
+            $productId = $_POST["id"];
+        
+            $id = $productId;
+        
+            $dodaj = "INSERT INTO shopping_cart VALUES ('$userId','$productId')";
+            if (mysqli_query($conn, $dodaj)) {
+                $added_to_basket_message = '<div class="alert alert-success" role="alert">Produkt został dodany do koszyka!</div>';
+            } else {
+                $added_to_basket_message = '<div class="alert alert-danger" role="alert">Błąd podczas dodawania produktu do koszyka.</div>';
+            }
+        }
+
+        $q = "SELECT title, description, price, image FROM products WHERE id = '$id'";
 
         $result = mysqli_query($conn, $q);
 
         while ($row = mysqli_fetch_row($result)) {
-          echo "        
-          <div class='col-md-4'>
-            <a href='/XSS_example/victim/product.php?id=$row[4]'>   
-              <div class='product-card'>
+            echo "
+            <div class='col'>
+                $added_to_basket_message
+                <div class='product-card'>
                 <h2 class='product-title'>$row[0]</h2>
                 <img src='img/$row[3]' alt='$row[0]' class='product-image'>
                 <p class='product-price'>$$row[2]</p>
                 <p class='product-description'>$row[1]</p>
-              </div>
-            </a>
-          </div>";
+                </div>
+                <form method='POST' action='product.php'>
+                <input type='text' name='id' hidden value='$id'>
+                <input type='submit' class='btn btn-primary' value='Dodaj do koszyka' />
+                </form>
+            </div>
+            ";
         }
 
         $conn->close();
-        echo "</div>";
-      }
       ?>
-
-    <h4 class="mt-4">Lista wszystkich produktów znaduje sie poniżej: </h4>
-    <div class="row">
-      <?php
-      
-      $conn = mysqli_connect("localhost", "root", "", "xss_attack_db");
-      $q = "SELECT title, description, price, image, id FROM products";
-
-      $result = mysqli_query($conn, $q);
-
-      while ($row = mysqli_fetch_row($result)) {
-        echo "
-        <div class='col-md-4'>
-        <a href='/XSS_example/victim/product.php?id=$row[4]'>     
-            <div class='product-card'>
-              <h2 class='product-title'>$row[0]</h2>
-              <img src='img/$row[3]' alt='$row[0]' class='product-image'>
-              <p class='product-price'>$$row[2]</p>
-              <p class='product-description'>$row[1]</p>
-            </div>
-            </a>
-          </div>
-        ";
-      }
-
-      $conn->close();
-
-      ?>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-
-</script>
 </body>
 </html>

@@ -61,7 +61,7 @@ if(!$_COOKIE["jwt"]) {
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" href="">Produkty</a>
+          <a class="nav-link" href="/XSS_example/victim/products.php">Produkty</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/XSS_example/victim/cart.php">Koszyk</a>
@@ -92,69 +92,42 @@ if(!$_COOKIE["jwt"]) {
 </nav>
 
 <div class="container mt-4">
-    <h1>Wpisz aby wyszukać produkty!</h1>
-
-    <form class="d-flex ms-auto" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="GET">
-        <input class="form-control me-2" type="text" name="search" 
-        value="<?php 
-        if (isset($_GET['search']))  {
-          echo $_GET['search'];
-        }
-        ?>" 
-        placeholder="Wyszukaj" aria-label="Search" />
-
-        <input type="submit" value="Szukaj" />
-      </form>
-
-    <?php
-      echo "<div class='row'>";
-      if (isset($_GET['search'])) {
-        echo "<p>Wyniki dla: " . "<span class='fw-bold'>" . $_GET['search'] . "</span>" . "</p>";
-
-        $s = $_GET['search'];
-
-        $conn = mysqli_connect("localhost", "root", "", "xss_attack_db");
-        $q = "SELECT title, description, price, image, id FROM products WHERE title LIKE '%$s%' OR description LIKE '%$s%'";
-
-        $result = mysqli_query($conn, $q);
-
-        while ($row = mysqli_fetch_row($result)) {
-          echo "        
-          <div class='col-md-4'>
-            <a href='/XSS_example/victim/product.php?id=$row[4]'>   
-              <div class='product-card'>
-                <h2 class='product-title'>$row[0]</h2>
-                <img src='img/$row[3]' alt='$row[0]' class='product-image'>
-                <p class='product-price'>$$row[2]</p>
-                <p class='product-description'>$row[1]</p>
-              </div>
-            </a>
-          </div>";
-        }
-
-        $conn->close();
-        echo "</div>";
-      }
-      ?>
-
-    <h4 class="mt-4">Lista wszystkich produktów znaduje sie poniżej: </h4>
+    <h1>Koszyk zakupów</h1>
+    <h4 class="mt-4">Twoje produkty:</h4>
     <div class="row">
       <?php
-      
       $conn = mysqli_connect("localhost", "root", "", "xss_attack_db");
-      $q = "SELECT title, description, price, image, id FROM products";
+      
+      include "./helpers/jwt.php";
+      $jwtHelper = new JWTHelper();
+  
+      $payload = $jwtHelper->GetPayload($_COOKIE["jwt"]);
+  
+      $user = $payload["data"];
+      $userId = $user["id"];
+
+      if ($_POST) {
+        $prodId = $_POST["id"];
+        mysqli_query($conn, "DELETE FROM shopping_cart WHERE userId = '$userId' AND productId='$prodId';");
+      }
+
+      $q = "SELECT title, description, price, image, shopping_cart.productId FROM `shopping_cart` INNER JOIN products on products.id = shopping_cart.productId WHERE userId = '$userId'";
 
       $result = mysqli_query($conn, $q);
 
       while ($row = mysqli_fetch_row($result)) {
         echo "
         <div class='col-md-4'>
-        <a href='/XSS_example/victim/product.php?id=$row[4]'>     
+        <a href='/XSS_example/victim/product.php?id=$row[4]'>  
             <div class='product-card'>
               <h2 class='product-title'>$row[0]</h2>
               <img src='img/$row[3]' alt='$row[0]' class='product-image'>
               <p class='product-price'>$$row[2]</p>
               <p class='product-description'>$row[1]</p>
+              <form method='POST' action='cart.php'>
+                <input type='text' name='id' hidden value='$row[4]'>
+                <input type='submit' value='Usuń' class='btn btn-danger' />
+              </form>
             </div>
             </a>
           </div>
@@ -162,14 +135,10 @@ if(!$_COOKIE["jwt"]) {
       }
 
       $conn->close();
-
       ?>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-
-</script>
 </body>
 </html>
