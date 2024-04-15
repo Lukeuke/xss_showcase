@@ -33,6 +33,7 @@ if(!isset($_COOKIE["jwt"])) {
         <?php
         include "./helpers/jwt.php";
         $jwtHelper = new JWTHelper();
+
         $payload = $jwtHelper->GetPayload($_COOKIE["jwt"]);
 
         $user = $payload["data"];
@@ -75,7 +76,9 @@ if(!isset($_COOKIE["jwt"])) {
 
         $user = $payload["data"];
 
-        if ($user["role"] != "admin") {
+        $valid = $jwtHelper->is_valid($_COOKIE["jwt"]);
+
+        if ($user["role"] != "admin" || !$valid) {
             echo "<div class='text-danger'>Tylko administrator ma dostęp do tej strony.</div>";
         }
         else {
