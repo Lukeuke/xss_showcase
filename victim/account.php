@@ -69,27 +69,41 @@ if(!isset($_COOKIE["jwt"])) {
 </nav>
 
 <div class="container mt-4">
-    <form action="account.php" method="POST">
-        <input class="btn btn-primary" value="Wyloguj się" type="submit" />
-    </form>
-
     <?php
         $jwtHelper = new JWTHelper();
         $payload = $jwtHelper->GetPayload($_COOKIE["jwt"]);
 
         $user = $payload["data"];
 
+        $username = $user["username"];
+
         echo "Username: ".$user["username"];
         echo "<br>Role: ".$user["role"];
     ?>
+
+    <div class="mt-4">
+      <form action="changePassword.php" method="POST">
+        
+          <div class="mb-3">
+            <label for="password">Zmień hasło</label>
+            <input type="password" name="password" id="password" placeholder="haslo...">
+
+            <input type="text" name="username" id="" value=<?php echo "'$username'" ?> hidden />
+          </div>
+          <div class="mb-3">
+            <input class="btn btn-primary" value="Zmien haslo" type="submit" />
+          </div>
+
+      </form>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 <?php
 
     if ($_POST) {
-        unset($_COOKIE['jwt']); 
-        setcookie('jwt', '', -1, '/'); 
+      unset($_COOKIE['jwt']); 
+      setcookie('jwt', '', -1, '/'); 
     }
 
 ?>
